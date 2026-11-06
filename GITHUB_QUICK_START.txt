@@ -1,0 +1,29 @@
+EAAR EXAM PREP - GITHUB PAGES QUICK START
+
+1. Create a PUBLIC GitHub repository named eaar-exam-prep.
+2. Unzip the GitHub Pages ZIP. Copy its CONTENTS into the repository
+   (not the ZIP file itself). GitHub Desktop is easiest for folders.
+3. Commit and push the files to the main branch.
+4. Open repository > Settings > Pages.
+5. Set Source = Deploy from a branch; Branch = main; Folder = /(root).
+6. Save. Open https://YOUR-GITHUB-USERNAME.github.io/eaar-exam-prep/
+
+UPDATING A QUESTION POOL
+- For JSON or DOCX/TXT in the website: Update Pools > Preview > Download pool JSON.
+- Replace only pools/general.json (or technician.json / extra.json) in GitHub.
+- Commit; the public site updates when GitHub Pages republishes it.
+
+WORD OR PDF UPDATES THROUGH GITHUB
+1. Upload the latest official NCVEC document to incoming/ via GitHub.
+2. Actions > Update Question Pool > Run workflow.
+3. Choose license class and enter e.g. incoming/general.docx.
+4. Add version and effective dates if not reliably detected.
+5. Run workflow; only a validated pool will be committed.
+6. Verify the update against NCVEC's published question bank and errata.
+
+IMPORTANT
+- The website's Update Pools screen cannot directly change GitHub.
+  The owner/admin must commit a JSON file or run the workflow.
+- Student progress remains in their browser and does NOT sync between devices.
+- Never commit student profiles, progress backups or passwords to a public repo.
+- Read README.md for complete instructions and limitations.
