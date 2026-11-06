@@ -1,0 +1,82 @@
+name: Update Question Pool
+
+on:
+  workflow_dispatch:
+    inputs:
+      license_class:
+        description: 'Which license class?'
+        required: true
+        type: choice
+        options:
+          - technician
+          - general
+          - extra
+      source_path:
+        description: 'Path to uploaded source (example: incoming/general.docx)'
+        required: true
+        type: string
+      version:
+        description: 'Errata/version (example: 2027-02-01; leave blank to detect)'
+        required: false
+        type: string
+      effective_from:
+        description: 'Effective start YYYY-MM-DD (leave blank to detect)'
+        required: false
+        type: string
+      effective_to:
+        description: 'Effective end YYYY-MM-DD (leave blank to detect)'
+        required: false
+        type: string
+      revision_date:
+        description: 'Latest errata YYYY-MM-DD (leave blank to detect)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pool-publishing
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF and Word conversion dependencies
+        run: python -m pip install --disable-pip-version-check pymupdf python-docx
+      - name: Convert and validate official question pool
+        env:
+          POOL_CLASS: ${{ inputs.license_class }}
+          POOL_SOURCE: ${{ inputs.source_path }}
+          POOL_VERSION: ${{ inputs.version }}
+          POOL_FROM: ${{ inputs.effective_from }}
+          POOL_TO: ${{ inputs.effective_to }}
+          POOL_REVISION: ${{ inputs.revision_date }}
+        run: |
+          # Do not allow arbitrary filesystem paths (including ../).
+          python - <<'PY'
+          import os, pathlib
+          p=pathlib.Path(os.environ['POOL_SOURCE'])
+          if p.is_absolute() or '..' in p.parts or p.parts[0]!='incoming' or p.suffix.lower() not in ('.txt','.docx','.pdf','.json'):
+              raise SystemExit('Upload a .txt/.docx/.pdf/.json into incoming/ first, then select that relative path.')
+          if not p.is_file():raise SystemExit('Source not found: '+str(p))
+          PY
+          python scripts/import_pool.py --class "$POOL_CLASS" --source "$POOL_SOURCE" --version "$POOL_VERSION" --effective-from "$POOL_FROM" --effective-to "$POOL_TO" --revision-date "$POOL_REVISION"
+      - name: Commit validated pool update
+        run: |
+          if git diff --quiet -- pools; then
+            echo 'No changes to question pool.'
+            exit 0
+          fi
+          git config user.name 'EAAR Question Pool Updater'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pools/
+          git commit -m 'Update NCVEC question pool: ${{ inputs.license_class }}'
+          git push
